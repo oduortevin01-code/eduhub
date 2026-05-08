@@ -1,40 +1,81 @@
 export default async function handler(req, res) {
-  if (req.method!== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST' });
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  const { prompt, history, eduName, eduLevel, eduClass, imageData, requestType } = req.body;
+  const { question, type, user } = req.body;
+  const OPENAI_KEY = process.env.OPENAI_API_KEY; // Vercel pulls your key safely
 
-  // System prompt = makes it teach ANY subject, ANY level
-  const systemPrompt = `You are Eduhub AI Tutor, the official AI for Eduhub Schools Kenya.
-  Student: ${eduName}, Level: ${eduLevel}, Class: ${eduClass}
+  let systemPrompt = `You are Eduhub AI for Kenyan students. Level: ${user.level}. 
+  Use KICD/8-4-4 syllabus. Be simple, exam-focused. Add KCSE tips.`;
 
-  RULES:
-    1. Never mention Google, Gemini, or that you are an AI. You ARE Eduhub AI.
-    2. Adapt difficulty: For Primary use simple words. For University use technical depth.
-    3. For ALL subjects: Math, Biology, Physics, Geography, History, French, German, ICT, Business.
-    4. For Math/Science: ALWAYS use LaTeX. $...$ inline, $$...$$ display.
-    5. For diagrams: Output SVG code wrapped in \`\`\`svg... \`\`\` or Mermaid wrapped in \`\`\`mermaid... \`\`\`
-     Examples: cell diagram, water cycle, circuit, French verb chart.
-    6. For videos: If student asks "show me video", reply with: [YOUTUBE_SEARCH:biology cell division]
-    7. For courses: If student says "teach me French", create Lesson 1 with examples + practice.
-    8. For notes: Structure with # Headings, **bold key terms**, bullet points.
-    9. For homework: Guide step-by-step. Ask "what step are you stuck on?" Don't give final answer immediately.
-    10. If search request: Answer using your knowledge + suggest "Check Library → Notes" for deeper study.`;
+  let userPrompt = question;
 
-  let parts = [{text: `${systemPrompt}\n\nChat history:\n${history}\n\nUser request: ${prompt}\n\nEduhub AI:`}];
+  // 1. MOCK PAPER WITH EDUHUB LETTERHEAD
+  if (type === 'mock') {
+    systemPrompt += `Generate a full mock paper with marking scheme. 
+    Start with this exact header:
 
-  if(imageData) {
-    parts = [
-      {text: systemPrompt + "\n\nStudent uploaded homework image. 1. Identify subject + topic. 2. Guide step by step. 3. If diagram needed, provide SVG code."},
-      {inline_data: {mime_type: 'image/jpeg', data: imageData}}
-    ];
+    EDUHUB AI          |        EASY LEARNING
+    🎓                 |        Year: 2026
+
+    KENYA CERTIFICATE OF SECONDARY EDUCATION
+    ${user.level.toUpperCase()} MOCK EXAMINATION
+    ${question.toUpperCase()}
+    Time: 2 Hours
+
+    End with: © Eduhub AI 2026 | www.eduhub.co.ke`;
+    userPrompt = `Create a ${user.level} mock exam for ${question} with 10 questions and marking scheme`;
   }
 
-  const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      contents: [{parts}],
+  // 2. NOTES WITH YOUTUBE + QUIZ
+  if (type === 'notes') {
+    systemPrompt += `Generate notes then add: 
+    1. YouTube section: Search for "${question} animation KICD Kenya" and embed using iframe with modestbranding=1&rel=0
+    2. Add 3 KCSE-style MCQs with answers explained.
+    Start notes with: 📘 ${question.toUpperCase()} - ${user.level} NOTES
+    © Eduhub AI - Easy Learning 2026`;
+    userPrompt = `Make complete notes for ${question} for ${user.level}. Add video + 3 quiz questions.`;
+  }
+
+  // 3. TOPICAL QUIZ
+  if (type === 'quiz') {
+    userPrompt = `Create 5 KCSE-style MCQs for ${user.level} topic: ${question}. Mark instantly.`;
+  }
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+    let answer = data.choices[0].message.content;
+
+    // AUTO-EMBED YOUTUBE FOR NOTES - White label
+    if (type === 'notes') {
+      const videoId = 'hXgV5jep9nU'; // Default: Photosynthesis animation. Later we swap per topic.
+      answer = answer.replace('--- 📺 Eduhub Easy Learning Video ---', 
+        `--- 📺 Eduhub Easy Learning ---
+        <iframe width="100%" height="200" 
+        src="https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0" 
+        frameborder="0" allowfullscreen></iframe>`);
+    }
+
+    res.status(200).json({ answer });
+  } catch (error) {
+    res.status(500).json({ answer: 'Eduhub AI error. Try again.' });
+  }
+}      contents: [{parts}],
       generationConfig: {temperature: 0.7, maxOutputTokens: 2048} // Bigger for notes + diagrams
     })
   });
