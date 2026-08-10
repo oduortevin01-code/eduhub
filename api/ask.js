@@ -4,17 +4,17 @@ export default async function handler(req, res) {
   const { question, type, user } = req.body;
   const OPENAI_KEY = process.env.OPENAI_API_KEY; // Vercel pulls your key safely
 
-  let systemPrompt = `You are Eduhub AI for Kenyan students. Level: ${user.level}. 
+  let systemPrompt = `You are Zimora AI for Kenyan students. Level: ${user.level}. 
   Use KICD/8-4-4 syllabus. Be simple, exam-focused. Add KCSE tips.`;
 
   let userPrompt = question;
 
-  // 1. MOCK PAPER WITH EDUHUB LETTERHEAD
+  // 1. MOCK PAPER WITH ZIMORA LETTERHEAD
   if (type === 'mock') {
     systemPrompt += `Generate a full mock paper with marking scheme. 
     Start with this exact header:
 
-    EDUHUB AI          |        EASY LEARNING
+    ZIMORA AI          |        EASY LEARNING
     🎓                 |        Year: 2026
 
     KENYA CERTIFICATE OF SECONDARY EDUCATION
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     ${question.toUpperCase()}
     Time: 2 Hours
 
-    End with: © Eduhub AI 2026 | www.eduhub.co.ke`;
+    End with: © Zimora AI 2026 | www.zimora.co.ke`;
     userPrompt = `Create a ${user.level} mock exam for ${question} with 10 questions and marking scheme`;
   }
 
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     1. YouTube section: Search for "${question} animation KICD Kenya" and embed using iframe with modestbranding=1&rel=0
     2. Add 3 KCSE-style MCQs with answers explained.
     Start notes with: 📘 ${question.toUpperCase()} - ${user.level} NOTES
-    © Eduhub AI - Easy Learning 2026`;
+    © Zimora AI - Easy Learning 2026`;
     userPrompt = `Make complete notes for ${question} for ${user.level}. Add video + 3 quiz questions.`;
   }
 
@@ -59,35 +59,29 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    let answer = data.choices[0].message.content;
+    let answer = data.choices?.[0]?.message?.content || 'Sorry, I had trouble with that. Try again.';
 
     // AUTO-EMBED YOUTUBE FOR NOTES - White label
     if (type === 'notes') {
       const videoId = 'hXgV5jep9nU'; // Default: Photosynthesis animation. Later we swap per topic.
-      answer = answer.replace('--- 📺 Eduhub Easy Learning Video ---', 
-        `--- 📺 Eduhub Easy Learning ---
+      answer = answer.replace('--- 📺 Eduhub Easy Learning Video ---',
+        `--- 📺 Zimora Easy Learning ---
         <iframe width="100%" height="200" 
         src="https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0" 
         frameborder="0" allowfullscreen></iframe>`);
     }
 
+    // Handle any leftover YouTube-search markers from the prompt
+    if (answer.includes('[YOUTUBE_SEARCH:')) {
+      const match = answer.match(/\[YOUTUBE_SEARCH:(.*?)\]/);
+      const query = match ? match[1] : question;
+      answer = answer.replace(/\[YOUTUBE_SEARCH:.*?\]/,
+        `\n\n**Recommended video:** Search YouTube for "${query}"\n\nOr I can explain it here with diagrams. What would you prefer?`);
+    }
+
     res.status(200).json({ answer });
   } catch (error) {
-    res.status(500).json({ answer: 'Eduhub AI error. Try again.' });
+    console.error(error);
+    res.status(500).json({ answer: 'Zimora AI error. Try again.' });
   }
-}      contents: [{parts}],
-      generationConfig: {temperature: 0.7, maxOutputTokens: 2048} // Bigger for notes + diagrams
-    })
-  });
-
-  const data = await geminiRes.json();
-  let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I had trouble with that. Try again.';
-
-  // Handle YouTube search requests
-  if(reply.includes('[YOUTUBE_SEARCH:')) {
-    const query = reply.match(/\[YOUTUBE_SEARCH:(.*?)\]/)[1];
-    reply = reply.replace(/\[YOUTUBE_SEARCH:.*?\]/, `\n\n**Recommended video:** Search YouTube for "${query}"\n\nOr I can explain it here with diagrams. What would you prefer?`);
-  }
-
-  res.status(200).json({ reply });
 }
