@@ -14,6 +14,10 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
   :root{
     --navy-900:#0a1a3f;
@@ -346,6 +350,42 @@
   .msg.ai strong{color:var(--navy-800);}
   .msg.ai p{margin:6px 0;}
   .msg.ai code{background:#eef2fb; padding:1px 5px; border-radius:5px; font-size:0.9em;}
+  .msg-actions{
+    display:flex; gap:8px;
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px solid #f0f2fa;
+  }
+  .msg-action-btn{
+    background:#eef2fb;
+    border:none;
+    color:var(--navy-700);
+    font-size:11.5px;
+    font-weight:600;
+    padding:6px 10px;
+    border-radius:999px;
+    display:flex; align-items:center; gap:5px;
+  }
+  .msg-action-btn:active{background:#dde4f5;}
+  .msg-action-btn.speaking{background:var(--gold-400); color:var(--navy-900);}
+  .notes-pill{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px;
+    margin:10px 14px 0;
+    padding:8px 12px;
+    background:#eef2fb;
+    border:1px solid #dde4f5;
+    border-radius:12px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--navy-700);
+  }
+  .notes-pill span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .notes-pill button{
+    background:none; border:none;
+    color:var(--navy-700); font-size:14px;
+    flex-shrink:0;
+  }
   .msg.attach{
     background:#eef2fb;
     color:var(--navy-700);
@@ -617,33 +657,4 @@
       <form id="formSignUp" style="display:none;">
         <div class="field">
           <label for="suName">Full name</label>
-          <input type="text" id="suName" autocomplete="name" required placeholder="Your full name">
-        </div>
-        <div class="field">
-          <label for="suLevel">Level</label>
-          <select id="suLevel" required>
-            <option value="">Select your level</option>
-            <option>Grade 7</option>
-            <option>Grade 8</option>
-            <option>Grade 9</option>
-            <option>Form 1</option>
-            <option>Form 2</option>
-            <option>Form 3</option>
-            <option>Form 4</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="suEmail">Email</label>
-          <input type="email" id="suEmail" autocomplete="email" required placeholder="you@example.com">
-        </div>
-        <div class="field">
-          <label for="suPassword">Password</label>
-          <input type="password" id="suPassword" autocomplete="new-password" required minlength="6" placeholder="At least 6 characters">
-        </div>
-        <button type="submit" class="btn-primary" id="btnSignUp">
-          <span class="btn-label">Create Account</span>
-        </button>
-        <div class="auth-msg" id="suMsg"></div>
-      </form>
-
-      <p class="fine-print">By continuing you agree to Zimora's Terms and acknowledge our Privacy Policy. Your password is encrypted and never stored in plain te
+        
