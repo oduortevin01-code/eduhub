@@ -1,8 +1,8 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST' });
 
-  const { prompt, history, eduName, eduLevel } = req.body;
-  const OPENAI_KEY = process.env.OPENAI_API_KEY;
+  const { prompt, history, eduName, eduLevel, notes } = req.body;
+  const NVIDIA_KEY = process.env.NVIDIA_API_KEY; // free key from build.nvidia.com, starts with nvapi-
 
   if (!prompt) {
     return res.status(400).json({ reply: 'Please type a question first.' });
@@ -22,20 +22,29 @@ Formatting rules:
 - Use headings and bullet points for notes so they're easy to revise from.`;
 
   const messages = [{ role: 'system', content: systemPrompt }];
+
+  if (notes && notes.trim()) {
+    messages.push({
+      role: 'system',
+      content: `The student has uploaded their own study notes below. Teach and quiz them using THIS material as the primary source — explain it in your own words, ask them questions about it, and correct misunderstandings. If they ask something the notes don't cover, you may use general knowledge but say so.\n\n--- STUDENT'S NOTES ---\n${notes}\n--- END OF NOTES ---`
+    });
+  }
+
   if (history) {
     messages.push({ role: 'system', content: `Recent conversation so far, for context:\n${history}` });
   }
   messages.push({ role: 'user', content: prompt });
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // NVIDIA NIM — free, OpenAI-compatible endpoint (get a key at build.nvidia.com)
+    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_KEY}`,
+        'Authorization': `Bearer ${NVIDIA_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'meta/llama-3.3-70b-instruct',
         messages,
         temperature: 0.7,
         max_tokens: 1500
@@ -45,7 +54,7 @@ Formatting rules:
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('OpenAI API error:', data);
+      console.error('NVIDIA NIM API error:', data);
       return res.status(500).json({ reply: 'Zimora AI is having trouble reaching the tutor right now. Please try again shortly.' });
     }
 
