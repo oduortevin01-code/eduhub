@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Zimora — Learn. Grow. Achieve.</title>
-<link rel="icon" type="image/png" href="zimora-icon.png">
-<link rel="apple-touch-icon" href="zimora-icon.png">
+<link rel="icon" id="faviconLink" type="image/png" href="">
+<link rel="apple-touch-icon" id="touchIconLink" href="">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -40,7 +40,7 @@
     font-family:var(--font-body);
     background:var(--paper);
     color:var(--ink);
-    overflow-x:hidden;
+    overflow:hidden;
     -webkit-tap-highlight-color:transparent;
   }
   @media (prefers-reduced-motion: reduce){
@@ -61,24 +61,32 @@
     overflow:hidden;
   }
 
-  /* ---------- Screens ---------- */
+  /* ---------- Screens (each is a full, fixed page — no bleed/scroll between them) ---------- */
   .screen{
     display:none;
-    min-height:100vh;
+    position:fixed;
+    inset:0;
     width:100%;
+    height:100%;
+    max-width:520px;
+    margin:0 auto;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    background:var(--paper);
   }
   .screen.active{display:block;}
+  #main.active{display:flex;}
 
   /* ---------- Splash ---------- */
   #splash{
     background:radial-gradient(circle at 50% 20%, var(--navy-700) 0%, var(--navy-900) 65%);
     min-height:100vh;
-    display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
     position:relative;
   }
+  #splash.active{display:flex;}
   #splash .stars{
     position:absolute; inset:0;
     background-image:
@@ -117,16 +125,33 @@
     from{opacity:0; transform:translateY(10px);}
     to{opacity:1; transform:translateY(0);}
   }
-  #splash .loader{
-    margin-top:36px;
-    width:36px;height:36px;
-    border-radius:50%;
-    border:3px solid rgba(255,255,255,0.15);
-    border-top-color:var(--gold-500);
-    animation:spin 900ms linear infinite;
+  #splash .progress-track{
+    margin-top:34px;
+    width:180px;
+    height:6px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.15);
+    overflow:hidden;
     z-index:1;
   }
-  @keyframes spin{to{transform:rotate(360deg);}}
+  #splash .progress-fill{
+    height:100%;
+    width:0%;
+    border-radius:999px;
+    background:linear-gradient(90deg, var(--gold-500), var(--gold-400));
+    animation:fillBar 4000ms ease-in-out forwards;
+  }
+  @keyframes fillBar{
+    0%{width:0%;}
+    100%{width:100%;}
+  }
+  #splash .loading-text{
+    margin-top:12px;
+    color:#8fa0d6;
+    font-size:11.5px;
+    letter-spacing:0.05em;
+    z-index:1;
+  }
 
   /* ---------- Auth ---------- */
   #auth{
@@ -258,7 +283,6 @@
   #main{
     height:100vh;
     background:var(--paper);
-    display:flex;
     flex-direction:column;
     overflow:hidden;
   }
@@ -552,15 +576,18 @@
   <!-- ================= SPLASH ================= -->
   <section id="splash" class="screen active">
     <div class="stars"></div>
-    <img src="zimora-icon.png" alt="Zimora">
+    <img class="zimora-logo" alt="Zimora">
     <div class="tagline">LEARN &nbsp;•&nbsp; GROW &nbsp;•&nbsp; ACHIEVE</div>
-    <div class="loader" role="status" aria-label="Loading"></div>
+    <div class="progress-track" role="status" aria-label="Loading">
+      <div class="progress-fill"></div>
+    </div>
+    <div class="loading-text">LOADING…</div>
   </section>
 
   <!-- ================= AUTH ================= -->
   <section id="auth" class="screen">
     <div class="auth-header">
-      <img src="zimora-icon.png" alt="Zimora">
+      <img class="zimora-logo" alt="Zimora">
       <h1>Welcome to Zimora</h1>
       <p>YOUR FUTURE, OUR MISSION</p>
     </div>
@@ -619,23 +646,4 @@
         <div class="auth-msg" id="suMsg"></div>
       </form>
 
-      <p class="fine-print">By continuing you agree to Zimora's Terms and acknowledge our Privacy Policy. Your password is encrypted and never stored in plain text.</p>
-    </div>
-  </section>
-
-  <!-- ================= MAIN APP ================= -->
-  <section id="main" class="screen">
-    <div class="topbar">
-      <div class="topbar-left">
-        <img src="zimora-icon.png" alt="Zimora">
-        <span class="topbar-title">Zimora</span>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button class="chat-icon-btn" id="newChatBtn" aria-label="New chat" style="background:rgba(255,255,255,0.08); color:var(--white);">🔄</button>
-        <button class="icon-btn" id="menuOpenBtn" aria-label="Open menu">☰</button>
-      </div>
-    </div>
-
-    <div id="chat"></div>
-
-    <div class="chat-input
+      <p class="fine-print">By continuing you agree to Zimora's Terms and acknowledge our Privacy Policy. Your password is encrypted and never stored in plain te
