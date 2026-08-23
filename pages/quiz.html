@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Quiz — Zimora</title>
+<link rel="icon" type="image/png" href="../zimora-logo.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0a1a3f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<link rel="stylesheet" href="../style.css">
+</head><body data-page="quiz"><div id="chrome"></div><main class="page-body">
+<div id="quizPicker"><div class="page-header"><h1>🧠 Quick Quiz</h1><p>Choose a subject and start a fast personalized quiz.</p></div>
+<div class="grid">
+<button class="subject-card quiz-start" data-subject="Mathematics"><span class="emoji">➗</span><strong>Mathematics</strong></button>
+<button class="subject-card quiz-start" data-subject="Biology"><span class="emoji">🧬</span><strong>Biology</strong></button>
+<button class="subject-card quiz-start" data-subject="Chemistry"><span class="emoji">⚗️</span><strong>Chemistry</strong></button>
+<button class="subject-card quiz-start" data-subject="Physics"><span class="emoji">🔭</span><strong>Physics</strong></button>
+<button class="subject-card quiz-start" data-subject="English"><span class="emoji">📖</span><strong>English</strong></button>
+<button class="subject-card quiz-start" data-subject="Geography"><span class="emoji">🌍</span><strong>Geography</strong></button>
+<a class="feature-card" href="#"><span class="emoji">➕</span><strong>More Subjects</strong><span>Expand the subject list</span></a>
+</div><div id="quizMsg" class="auth-msg" style="padding:0 18px"></div></div><div id="quizArea" style="display:none"></div>
+</main><script src="../app.js"></script>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js');</script>
+</body></html>
