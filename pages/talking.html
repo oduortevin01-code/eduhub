@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Learn by Talking — Zimora</title>
+<link rel="icon" type="image/png" href="../zimora-logo.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0a1a3f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body data-page="talking" class="page-shell">
+<div id="chrome"></div>
+<main class="page-body">
+
+  <div class="tutor-hero">
+    <div class="tutor-avatar">🤖</div>
+    <h2>Hi, <span id="talkName">there</span>! 👋</h2>
+    <p id="talkStatus">🟢 Zimora is ready to teach</p>
+  </div>
+
+  <div class="talk-input-row">
+    <input type="text" id="talkPrompt" placeholder="What would you like to learn today?">
+    <button class="chat-icon-btn" id="talkMicBtn" aria-label="Speak instead of typing">🎤</button>
+  </div>
+  <button class="btn-primary" id="talkStartBtn">🎙️ Start Learning</button>
+
+  <h2 class="section-title">✨ Teach Me Anything</h2>
+  <div class="grid" id="modeGrid">
+    <button class="feature-card" data-mode="teach"><span class="emoji">🎓</span><strong>Teach me</strong><span>Full interactive lesson</span></button>
+    <button class="feature-card" data-mode="quiz"><span class="emoji">🧠</span><strong>Quiz me</strong><span>Test my understanding</span></button>
+    <button class="feature-card" data-mode="assignment"><span class="emoji">📝</span><strong>Assignment</strong><span>Give me practice work</span></button>
+    <button class="feature-card" data-mode="revise"><span class="emoji">🔄</span><strong>Revise with me</strong><span>Review key concepts</span></button>
+    <button class="feature-card" data-mode="explain"><span class="emoji">📖</span><strong>Explain a topic</strong><span>Break it down for me</span></button>
+    <button class="feature-card" data-mode="showwork"><span class="emoji">✍️</span><strong>Show my work</strong><span>Check my attempt</span></button>
+  </div>
+
+  <h2 class="section-title">How should Zimora teach you?</h2>
+  <div class="chip-row" id="styleChips">
+    <button class="chip active" data-style="Explain like I'm new to this — keep it very simple.">🟢 Simple</button>
+    <button class="chip" data-style="Go deeper and give a detailed explanation.">🔵 Detailed</button>
+    <button class="chip" data-style="Use lots of diagrams and visual examples.">🟣 Visual</button>
+    <button class="chip" data-style="Ask me lots of questions as we go, interactively.">🟠 Interactive</button>
+    <button class="chip" data-style="Focus on exam technique and likely exam questions.">🔴 Exam mode</button>
+  </div>
+
+  <h2 class="section-title">📚 Learn From Your Material</h2>
+  <div class="card">
+    <div class="btn-row" style="flex-wrap:wrap">
+      <button class="btn-secondary" id="talkFileBtn">📄 Upload a file</button>
+      <button class="btn-secondary" id="talkImageBtn">🖼️ Upload an image</button>
+      <button class="btn-secondary" id="talkLibraryBtn">📚 From My Library</button>
+    </div>
+    <p class="empty-note" style="margin-top:10px">Upload notes, a PDF, or a photo of a page — Zimora will read it and teach from it directly.</p>
+  </div>
+  <input type="file" id="talkFileInput" accept=".pdf,.doc,.docx,.txt" style="display:none">
+  <input type="file" id="talkImageInput" accept="image/*" style="display:none">
+
+  <h2 class="section-title">Continue Learning</h2>
+  <div id="talkContinueSlot" class="card"><p class="empty-note">Loading…</p></div>
+
+</main>
+<script src="../app.js"></script>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js');</script>
+</body>
+      </html>
+  
