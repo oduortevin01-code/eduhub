@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Voice Learning — Zimora</title>
+<link rel="icon" type="image/png" href="../zimora-logo.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0a1a3f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body data-page="voice" class="page-shell">
+<div id="chrome"></div>
+<main class="voice-page">
+
+  <div id="voiceStage" class="voice-stage"><div class="voice-avatar">🤖</div></div>
+  <div class="status-pill"><span id="statusText">🟢 Zimora is ready</span></div>
+
+  <h1 id="voiceTitle">What would you like to learn?</h1>
+  <p id="voiceDescription">Tap the microphone and speak naturally.</p>
+
+  <div id="transcriptCard" class="voice-response-card" style="display:none">
+    <b>You said:</b>
+    <p id="transcriptText"></p>
+  </div>
+
+  <div id="responseCard" class="voice-response-card" style="display:none">
+    <b>🤖 Zimora</b>
+    <p id="responseText"></p>
+    <button class="btn-primary" id="openLessonBtn">📚 Continue to Interactive Lesson</button>
+  </div>
+
+  <button id="micButton" class="voice-mic-btn" aria-label="Start or stop speaking">🎙️</button>
+  <p id="controlLabel" style="color:var(--muted);font-size:12.5px;margin-top:8px">Tap to start talking</p>
+
+</main>
+<script src="../app.js"></script>
+</body>
+</html>
