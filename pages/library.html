@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Study Library — Zimora</title>
+<link rel="icon" type="image/png" href="../zimora-logo.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0a1a3f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<link rel="stylesheet" href="../style.css">
+</head><body data-page="library"><div id="chrome"></div><main class="page-body">
+<div class="page-header"><h1>📚 Study Library</h1><p>Keep your learning materials organized and study them with Zimora.</p></div>
+<div class="card"><input placeholder="🔍 Search notes, books, papers..."></div>
+<div class="library-upload-card card"><h3>📄 Add study material</h3><p style="color:var(--muted);font-size:13px">Upload PDF, DOCX or TXT files. Connect Supabase Storage later for permanent cloud storage.</p><button class="btn-primary" id="libraryUploadBtn">Choose File</button><input type="file" id="libraryFileInput" accept=".pdf,.doc,.docx,.txt" style="display:none"><div id="libraryStatus"></div></div>
+<h2 class="section-title">My Materials</h2><div class="card">
+<div class="library-item"><span class="file-icon">📄</span><div><h4>Example Biology Notes</h4><p>PDF • Ready to study</p></div></div>
+<div class="library-item"><span class="file-icon">📘</span><div><h4>My Saved Notes</h4><p>Notes generated in Zimora</p></div></div>
+</div>
+<h2 class="section-title">Study with Zimora</h2><div class="grid"><div class="feature-card"><span class="emoji">🤖</span><strong>Ask about it</strong><span>Questions from your material</span></div><div class="feature-card"><span class="emoji">🎙️</span><strong>Teach me</strong><span>Learn by talking</span></div><div class="feature-card"><span class="emoji">🧠</span><strong>Generate Quiz</strong><span>Test from your material</span></div><div class="feature-card"><span class="emoji">📝</span><strong>Create Assignment</strong><span>Practice from your material</span></div></div>
+</main><script src="../app.js"></script>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js');</script>
+</body></html>
