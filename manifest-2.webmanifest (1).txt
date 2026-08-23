@@ -1,0 +1,12 @@
+{
+  "name": "Zimora — Learn. Grow. Achieve.",
+  "short_name": "Zimora",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f9ff",
+  "theme_color": "#0a1a3f",
+  "description": "A multimodal AI learning companion.",
+  "icons": [
+    { "src": "./zimora-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
