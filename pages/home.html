@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Home — Zimora</title>
+<link rel="icon" type="image/png" href="../zimora-logo.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0a1a3f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body data-page="home" class="page-shell">
+<div id="chrome"></div>
+<main class="page-body">
+
+  <div class="home-hero" style="margin:16px 18px">
+    <h2>Hey, <span class="greet-name" id="greetName">there</span> 👋</h2>
+    <p>Ready to learn something new today?</p>
+    <div class="hero-goal">
+      <div class="goal-label"><span>🎯 Today's goal</span><span id="goalReadout">0/30 min</span></div>
+      <div class="progress"><i id="goalFill" style="width:0%"></i></div>
+    </div>
+  </div>
+
+  <h2 class="section-title">Continue Learning</h2>
+  <div id="continueSlot" class="card"><p class="empty-note">Loading…</p></div>
+
+  <h2 class="section-title">Quick Actions</h2>
+  <div class="grid">
+    <a class="feature-card" href="chat.html"><span class="emoji">🤖</span><strong>Ask Zimora</strong><span>Ask anything</span></a>
+    <a class="feature-card" href="notes.html"><span class="emoji">📘</span><strong>Notes</strong><span>Learn a topic</span></a>
+    <a class="feature-card" href="exam.html"><span class="emoji">🎯</span><strong>Exam Coach</strong><span>Practice an exam</span></a>
+    <a class="feature-card" href="papers.html"><span class="emoji">📄</span><strong>Past Papers</strong><span>AI mock papers</span></a>
+    <a class="feature-card" href="scanner.html"><span class="emoji">📷</span><strong>Scan Question</strong><span>Get help fast</span></a>
+    <a class="feature-card" href="quiz.html"><span class="emoji">🧠</span><strong>Quick Quiz</strong><span>Test yourself</span></a>
+  </div>
+
+  <h2 class="section-title">Today's Learning</h2>
+  <div id="todaySlot" class="card"><p class="empty-note">Loading…</p></div>
+
+  <h2 class="section-title">Your Progress</h2>
+  <div class="card">
+    <div class="streak-row" id="streakRow"><span class="streak-num">0</span><span class="streak-txt">day streak</span></div>
+    <div class="stat-grid" style="padding:0;margin-top:14px">
+      <div class="stat"><strong id="statLessons">0</strong><span>Lessons</span></div>
+      <div class="stat"><strong id="statQuizzes">0</strong><span>Quizzes</span></div>
+      <div class="stat"><strong id="statExams">0</strong><span>Exams</span></div>
+    </div>
+  </div>
+
+</main>
+<script src="../app.js"></script>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js');</script>
+</body>
+</html>
