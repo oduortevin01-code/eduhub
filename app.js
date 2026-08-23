@@ -993,30 +993,16 @@ function initTalkingPage(){
 ===================================================== */
 async function getZimoraLesson(message, mode, eduLevelParam){
   const prompt = `You are Zimora, a patient AI tutor. Education level: ${eduLevelParam || eduLevel}. Mode: ${mode || 'teach'}.
-Teach the following clearly and concisely, step by step, with one simple example: "${message}"
-Keep every field brief — 2-4 sentences max per text field — so the response stays fast.
+Teach the following clearly, step by step, with a simple example: "${message}"
 
 Respond with ONLY valid JSON (no markdown fences, no extra text) in exactly this shape:
-{"title":"...", "introduction":"...", "explanation":"...", "keyPoints":["...","...","..."], "example":"...", "visual":{"type":"diagram|none","title":"...","description":"...","searchQuery":"...","diagramCode":"flowchart TD; A-->B;"}, "nextStepQuestion":"...", "quiz":{"question":"...","options":["A","B","C","D"],"correctAnswer":0,"explanation":"..."}}
-Keep keyPoints to at most 4 short items. Only set visual.type to "diagram" if a real diagram genuinely helps; otherwise "none" with an empty diagramCode.`;
+{"title":"...", "introduction":"...", "explanation":"...", "keyPoints":["...","..."], "example":"...", "visual":{"type":"diagram|none","title":"...","description":"...","searchQuery":"...","diagramCode":"flowchart TD; A-->B;"}, "nextStepQuestion":"...", "quiz":{"question":"...","options":["A","B","C","D"],"correctAnswer":0,"explanation":"..."}}
+If a diagram would genuinely help, set visual.type to "diagram" and give real mermaid flowchart code; otherwise set type to "none" and leave diagramCode empty.`;
 
-  let data;
-  try {
-    data = await askZimora({ prompt });
-  } catch (e) {
-    throw new Error("Couldn't reach Zimora's server. Check your connection and try again.");
-  }
-  const raw = (data && data.reply || '').trim();
-  if (!raw) throw new Error('Zimora sent an empty reply. Please try again.');
-  let cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    // The server took too long or returned something unexpected (e.g. a
-    // platform error page) instead of the lesson JSON — say so plainly
-    // rather than surface the raw parse error.
-    throw new Error('The lesson took too long to generate or the server had a hiccup. Please try again — it usually works on a retry.');
-  }
+  const data = await askZimora({ prompt });
+  let raw = (data.reply || '').trim();
+  raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+  return JSON.parse(raw);
 }
 
 /* =====================================================
@@ -1077,23 +1063,11 @@ function initVoiceLearningPage(){
   };
 
   function speakOnce(text){
-    if (!window.speechSynthesis) {
-      toast('Voice reply is not supported in this browser — showing text instead.');
-      return;
-    }
+    if (!window.speechSynthesis) return;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 0.95;
-    u.onerror = () => toast('Voice reply is not supported in this browser — showing text instead.');
-    // Some mobile/in-app browsers silently refuse to play without a very
-    // recent user gesture. If nothing starts within ~600ms, tell the user
-    // instead of leaving them thinking it's just being quiet.
-    let started = false;
-    u.onstart = () => { started = true; };
     speechSynthesis.speak(u);
-    setTimeout(() => {
-      if (!started) toast("Couldn't play voice reply — try tapping the mic again, or open this in Chrome if you're inside another app.");
-    }, 700);
   }
 
   micButton.addEventListener('click', () => {
@@ -1461,15 +1435,12 @@ function initScannerPage(){
   const btn = document.getElementById('scanBtn');
   if (!btn) return;
   const input = document.getElementById('scanInput');
-  const galleryBtn = document.getElementById('scanGalleryBtn');
-  const galleryInput = document.getElementById('scanGalleryInput');
   const preview = document.getElementById('scanPreview');
   const result = document.getElementById('scanResult');
 
   btn.addEventListener('click', () => input.click());
-  galleryBtn?.addEventListener('click', () => galleryInput.click());
-
-  async function handleScan(file){
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
     if (!file) return;
     const dataUrl = await fileToDataURL(file);
 
@@ -1508,10 +1479,7 @@ function initScannerPage(){
     } catch (e) {
       result.innerHTML = '<div class="msg ai">Connection error reading that photo. Try again.</div>';
     }
-  }
-
-  input.addEventListener('change', () => handleScan(input.files[0]));
-  galleryInput.addEventListener('change', () => handleScan(galleryInput.files[0]));
+  });
 }
 
 /* =====================================================
