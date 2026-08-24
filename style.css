@@ -969,3 +969,63 @@
 .lesson-actions{ display:flex; gap:10px; margin:20px 18px; }
 .lesson-actions button{ flex:1; }
 .loading-lesson{ text-align:center; padding:60px 20px; color:var(--muted); font-size:13.5px; }
+/* =====================================
+   ZIMORA SCROLLING FIX
+   ===================================== */
+
+/* Normal pages should scroll */
+html {
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* Normal multi-page screens */
+body.page-shell {
+    min-height: 100vh;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* App container */
+#app {
+    min-height: 100vh;
+    height: auto;
+}
+
+/* Main application views */
+#main {
+    min-height: 100vh;
+    height: auto;
+}
+
+/* Scrollable content areas */
+.main-content {
+    min-height: 0;
+}
+
+.main-view {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Chat remains a special fixed layout */
+body.chat-shell {
+    height: 100dvh;
+    overflow: hidden;
+}
+
+body.chat-shell #chat {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
