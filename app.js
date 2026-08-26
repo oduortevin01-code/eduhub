@@ -2,7 +2,7 @@
    ZIMORA — SHARED APP CORE
    Loaded on every page. Each page sets <body data-page="...">
    so this file only runs the logic that page actually needs —
-   a missing element on one page can never crash another page.
+   a missin hig element on one page can never crash another page.
 ===================================================== */
 
 const SUPABASE_URL = "https://mmyvoxhseuyuwpgnpedb.supabase.co";
@@ -412,13 +412,47 @@ function speakText(text, btn){
   speechSynthesis.speak(utter);
 }
 
-async function askZimora(body){
+async function askZimora(body) {
   const res = await fetch('/api/ask', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(Object.assign({ eduName, eduLevel }, body))
+
+    headers: {
+      'Content-Type': 'application/json'
+    },
+
+    body: JSON.stringify({
+      eduName,
+      eduLevel,
+      ...body
+    })
   });
-  return res.json();
+
+  const text = await res.text();
+
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    console.error(
+      'Zimora server returned invalid data:',
+      text
+    );
+
+    throw new Error(
+      'The AI server returned an invalid response.'
+    );
+  }
+
+  if (!res.ok) {
+    throw new Error(
+      data.reply ||
+      data.error ||
+      `AI server error (${res.status})`
+    );
+  }
+
+  return data;
 }
 
 // Streaming variant — shows Zimora's reply token-by-token as it's generated
@@ -426,12 +460,104 @@ async function askZimora(body){
 // the first words appear as soon as the model starts responding, rather than
 // after the full ~1500-token reply has finished generating server-side.
 // onToken(fullTextSoFar) is called after every chunk; returns the final text.
-async function askZimoraStream(body, onToken){
+async function askZimoraStream(body, onToken) {
   const res = await fetch('/api/ask', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(Object.assign({ eduName, eduLevel, stream: true }, body))
+
+    headers: {
+      'Content-Type': 'application/json'
+    },
+
+    body: JSON.stringify({
+      eduName,
+      eduLevel,
+      ...body,
+      stream: true
+    })
   });
+
+  if (!res.ok || !res.body) {
+    const text = await res.text();
+
+    let message =
+      `AI server error (${res.status}).`;
+
+    try {
+      const data = JSON.parse(text);
+
+      message =
+        data.reply ||
+        data.error ||
+        message;
+    } catch (error) {
+      console.error(
+        'Streaming server error:',
+        text
+      );
+    }
+
+    throw new Error(message);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+
+  let full = '';
+  let buffer = '';
+
+  while (true) {
+    const { done, value } =
+      await reader.read();
+
+    if (done) break;
+
+    buffer += decoder.decode(value, {
+      stream: true
+    });
+
+    const lines = buffer.split('\n');
+
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      if (!trimmed.startsWith('data:')) {
+        continue;
+      }
+
+      const payload =
+        trimmed.slice(5).trim();
+
+      if (
+        !payload ||
+        payload === '[DONE]'
+      ) {
+        continue;
+      }
+
+      try {
+        const parsed =
+          JSON.parse(payload);
+
+        const token =
+          parsed?.choices?.[0]?.delta?.content;
+
+        if (token) {
+          full += token;
+          onToken(full);
+        }
+      } catch (error) {
+        console.warn(
+          'Skipping invalid stream data:',
+          payload
+        );
+      }
+    }
+  }
+
+  return full;
+}
   if (!res.ok || !res.body) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.reply || 'Connection error.');
@@ -991,18 +1117,115 @@ function initTalkingPage(){
    page renders, generated via our real NVIDIA-backed askZimora
    (not a separate AI provider).
 ===================================================== */
-async function getZimoraLesson(message, mode, eduLevelParam){
-  const prompt = `You are Zimora, a patient AI tutor. Education level: ${eduLevelParam || eduLevel}. Mode: ${mode || 'teach'}.
-Teach the following clearly, step by step, with a simple example: "${message}"
+async function getZimoraLesson(
+  message,
+  mode,
+  eduLevelParam
+) {
+  const prompt = `
+You are Zimora, a patient AI tutor.
 
-Respond with ONLY valid JSON (no markdown fences, no extra text) in exactly this shape:
-{"title":"...", "introduction":"...", "explanation":"...", "keyPoints":["...","..."], "example":"...", "visual":{"type":"diagram|none","title":"...","description":"...","searchQuery":"...","diagramCode":"flowchart TD; A-->B;"}, "nextStepQuestion":"...", "quiz":{"question":"...","options":["A","B","C","D"],"correctAnswer":0,"explanation":"..."}}
-If a diagram would genuinely help, set visual.type to "diagram" and give real mermaid flowchart code; otherwise set type to "none" and leave diagramCode empty.`;
+TOPIC:
+${message}
+
+EDUCATION LEVEL:
+${eduLevelParam || eduLevel || 'not specified'}
+
+MODE:
+${mode || 'teach'}
+
+Return ONLY valid JSON.
+
+Do not use Markdown.
+Do not use \`\`\`json.
+Do not add text before or after the JSON.
+
+Use exactly this structure:
+
+{
+  "title": "string",
+  "introduction": "string",
+  "explanation": "string",
+  "keyPoints": [
+    "point 1",
+    "point 2",
+    "point 3"
+  ],
+  "example": "string",
+  "visual": {
+    "type": "none",
+    "title": "Visual Learning",
+    "description": "string",
+    "searchQuery": "",
+    "diagramCode": ""
+  },
+  "nextStepQuestion": "string",
+  "quiz": {
+    "question": "string",
+    "options": [
+      "option 1",
+      "option 2",
+      "option 3",
+      "option 4"
+    ],
+    "correctAnswer": 0,
+    "explanation": "string"
+  }
+}
+
+Rules:
+- options must contain exactly four items.
+- correctAnswer must be 0, 1, 2, or 3.
+- keyPoints must be an array.
+- If a Mermaid diagram would help, use:
+  "type": "diagram"
+  and put Mermaid code in diagramCode.
+- Otherwise use:
+  "type": "none"
+- Make the lesson appropriate for the student's level.
+- Return valid JSON only.
+  `.trim();
 
   const data = await askZimora({ prompt });
-  let raw = (data.reply || '').trim();
-  raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
-  return JSON.parse(raw);
+
+  if (!data || !data.reply) {
+    throw new Error(
+      'The AI did not return a lesson.'
+    );
+  }
+
+  let raw = String(data.reply).trim();
+
+  raw = raw
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+
+  try {
+    const lesson = JSON.parse(raw);
+
+    if (
+      !lesson.title ||
+      !Array.isArray(lesson.keyPoints)
+    ) {
+      throw new Error(
+        'Incomplete lesson data.'
+      );
+    }
+
+    return lesson;
+
+  } catch (error) {
+    console.error(
+      'Invalid lesson response:',
+      raw
+    );
+
+    throw new Error(
+      'Zimora returned an invalid lesson format. Please try again.'
+    );
+  }
 }
 
 /* =====================================================
@@ -1342,12 +1565,46 @@ Respond with ONLY valid JSON (no markdown fences, no extra text), in exactly thi
 {"questions":[{"question":"...", "options":["A text","B text","C text","D text"], "correctIndex":0, "explanation":"short explanation of the correct answer"}]}
 Each question must be multiple choice with exactly 4 options.`;
 
-  try {
-    const data = await askZimora({ prompt });
-    let raw = (data.reply || '').trim();
-    raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
-    const parsed = JSON.parse(raw);
-    if (!parsed.questions || !parsed.questions.length) throw new Error('empty');
+  try {const data = await askZimora({ prompt });
+
+if (!data || !data.reply) {
+  throw new Error(
+    'The AI did not return questions.'
+  );
+}
+
+let raw = String(data.reply).trim();
+
+raw = raw
+  .replace(/^```json\s*/i, '')
+  .replace(/^```\s*/i, '')
+  .replace(/\s*```$/i, '')
+  .trim();
+
+let parsed;
+
+try {
+  parsed = JSON.parse(raw);
+} catch (error) {
+  console.error(
+    'Invalid exam JSON:',
+    raw
+  );
+
+  throw new Error(
+    'Zimora returned an invalid question format.'
+  );
+}
+
+if (
+  !parsed.questions ||
+  !Array.isArray(parsed.questions) ||
+  !parsed.questions.length
+) {
+  throw new Error(
+    'Zimora did not generate valid questions.'
+  );
+}
     stopStatus();
     if (msgEl) msgEl.textContent = '';
     renderExamQuestions(parsed.questions, subject, topic, setupEl, areaEl);
