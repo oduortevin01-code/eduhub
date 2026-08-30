@@ -457,6 +457,245 @@ async function askZimora(body) {
 
 // Streaming variant — shows Zimora's reply token-by-token as it's generated
 // instead of waiting for the whole answer. This is the real fix for "slow":
+// the first words aabled = true; btn.innerHTML = '<span class="spinner-sm"></span>';
+    const { data, error } = await sb.auth.signUp({
+      email, password,
+      options: { data: { full_name: name, level: level } }
+    });
+    btn.disabled = false; btn.innerHTML = '<span class="btn-label">Create Account</span>';
+
+    if (error) {
+      msg.textContent = error.message || 'Could not create your account. Try again.';
+      msg.classList.add('error');
+      return;
+    }
+    if (data.session) {
+      msg.textContent = 'Account created!'; msg.classList.add('success');
+      window.location.href = 'pages/home.html';
+    } else {
+      msg.textContent = 'Account created — check your email to confirm, then sign in.';
+      msg.classList.add('success');
+      setTimeout(() => tabSignIn.click(), 1800);
+    }
+  });
+}
+
+/* =====================================================
+   PAGE: home — real dashboard, no fake cards. Every number
+   comes from Supabase `activity_log`; sections show an honest
+   empty state until the learner actually has activity.
+===================================================== */
+const DAILY_GOAL_MINUTES = 30; // a target shown on the goal bar, not fabricated activity
+
+async function initHomePage(){
+  const greet = document.getElementById('greetName');
+  if (!greet) return;
+  greet.textContent = eduName.split(' ')[0];
+
+  const continueSlot = document.getElementById('continueSlot');
+  const todaySlot = document.getElementById('todaySlot');
+  const goalFill = document.getElementById('goalFill');
+  const goalReadout = document.getElementById('goalReadout');
+  const streakRow = document.getElementById('streakRow');
+  const statLessons = document.getElementById('statLessons');
+  const statQuizzes = document.getElementById('statQuizzes');
+  const statExams = document.getElementById('statExams');
+
+  const { data: rows, error } = await sb.from('activity_log')
+    .select('kind, subject, topic, minutes, progress, created_at')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    if (continueSlot) continueSlot.innerHTML = `<p class="empty-note">Could not load your activity right now.</p>`;
+    if (todaySlot) todaySlot.innerHTML = `<p class="empty-note">Could not load today's activity right now.</p>`;
+    return;
+  }
+
+  const all = rows || [];
+
+  // Continue Learning — most recent lesson-type activity, real or nothing
+  const lastLesson = all.find(r => r.kind === 'lesson');
+  if (continueSlot) {
+    continueSlot.innerHTML = lastLesson
+      ? `<b>📘 ${esc(lastLesson.subject)}${lastLesson.topic ? ' — ' + esc(lastLesson.topic) : ''}</b>
+         <div class="progress" style="margin-top:10px"><i style="width:${Math.max(0, Math.min(100, lastLesson.progress || 0))}%"></i></div>
+         <a class="btn-primary" style="display:block;text-align:center;margin-top:12px;text-decoration:none" href="notes.html">Continue →</a>`
+      : `<p class="empty-note">No lesson started yet.</p>
+         <a class="btn-primary" style="display:block;text-align:center;margin-top:10px;text-decoration:none" href="notes.html">📘 Start a lesson</a>`;
+  }
+
+  // Today's learning, grouped by subject
+  const todayStr = new Date().toDateString();
+  const todayRows = all.filter(r => new Date(r.created_at).toDateString() === todayStr);
+  const todayMinutes = todayRows.reduce((sum, r) => sum + (r.minutes || 0), 0);
+
+  if (todaySlot) {
+    if (todayRows.length) {
+      const bySubject = {};
+      todayRows.forEach(r => { bySubject[r.subject] = (bySubject[r.subject] || 0) + (r.minutes || 0); });
+      const dots = ['#f5b301', '#4f8fef', '#1c8a4a', '#e0483e'];
+      todaySlot.innerHTML = Object.entries(bySubject).map(([subject, mins], i) =>
+        `<div class="today-row"><span><span class="dot" style="background:${dots[i % dots.length]}"></span>${esc(subject)}</span><span class="mins">${mins} min</span></div>`
+      ).join('');
+    } else {
+      todaySlot.innerHTML = `<p class="empty-note">No activity yet today — once you start a lesson or quiz, it'll show up here.</p>`;
+    }
+  }
+
+  if (goalFill && goalReadout) {
+    const pct = Math.max(0, Math.min(100, Math.round((todayMinutes / DAILY_GOAL_MINUTES) * 100)));
+    goalFill.style.width = pct + '%';
+    goalReadout.textContent = `${todayMinutes}/${DAILY_GOAL_MINUTES} min`;
+  }
+
+  // Lesson / quiz / exam counts, all-time
+  const counts = { lesson: 0, quiz: 0, exam: 0 };
+  all.forEach(r => { if (counts[r.kind] !== undefined) counts[r.kind]++; });
+  if (statLessons) statLessons.textContent = counts.lesson;
+  if (statQuizzes) statQuizzes.textContent = counts.quiz;
+  if (statExams) statExams.textContent = counts.exam;
+
+  // Streak — consecutive days (today or yesterday, then backward) with any activity
+  const activeDays = new Set(all.map(r => new Date(r.created_at).toDateString()));
+  let streak = 0;
+  let cursor = new Date();
+  if (!activeDays.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
+  while (activeDays.has(cursor.toDateString())) { streak++; cursor.setDate(cursor.getDate() - 1); }
+  if (streakRow) {
+    streakRow.innerHTML = streak > 0
+      ? `<span class="streak-num">🔥 ${streak}</span><span class="streak-txt">day${streak === 1 ? '' : 's'} streak</span>`
+      : `<span class="streak-txt">Start today to begin your streak</span>`;
+  }
+}
+
+// Records one real learning event. Call this from any page right after
+// a lesson/quiz/exam actually happens — never on page load, never speculatively.
+async function logActivity({ kind, subject, topic = null, minutes = 0, score = null, progress = null }){
+  if (!currentUser) return;
+  const { error } = await sb.from('activity_log').insert({
+    user_id: currentUser.id, kind, subject, topic, minutes, score, progress
+  });
+  if (error) console.warn('logActivity failed:', error.message);
+}
+
+/* =====================================================
+   Shared: notes rendering (chat / library / notes / papers all reuse this)
+===================================================== */
+function renderRichText(container, text){
+  const safeText = text.replace(/\[YOUTUBE_SEARCH:(.*?)\]/g, (m, q) => {
+    const query = q.trim();
+    const url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query + ' explanation for students');
+    return `<div class="video-card"><div class="video-card-label">🎬 Recommended video</div><a href="${url}" target="_blank" rel="noopener">Search "${query}" on YouTube ↗</a></div>`;
+  });
+  container.innerHTML = marked.parse(safeText);
+
+  if (window.renderMathInElement) {
+    renderMathInElement(container, { delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}] });
+  }
+  const mermaidBlocks = container.querySelectorAll('code.language-mermaid');
+  if (mermaidBlocks.length && window.mermaid) {
+    mermaidBlocks.forEach(block => {
+      const div = document.createElement('div');
+      div.className = 'mermaid';
+      div.textContent = block.textContent;
+      block.closest('pre').replaceWith(div);
+    });
+    try { mermaid.init(undefined, container.querySelectorAll('.mermaid')); } catch(e) { console.error(e); }
+  }
+}
+
+async function downloadAsPDF(el, filenamePrefix){
+  if (!window.html2canvas || !window.jspdf) { toast('PDF tool still loading, try again in a moment.'); return; }
+  try {
+    const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 2 });
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth - 40;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 20;
+    const imgData = canvas.toDataURL('image/png');
+    pdf.addImage(imgData, 'PNG', 20, position, imgWidth, imgHeight);
+    heightLeft -= (pageHeight - 40);
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight + 20;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 20, position, imgWidth, imgHeight);
+      heightLeft -= (pageHeight - 40);
+    }
+    pdf.save(`${filenamePrefix}-${Date.now()}.pdf`);
+  } catch (e) {
+    console.error(e);
+    toast('Could not create PDF. Try again.');
+  }
+}
+
+let currentUtterance = null;
+function speakText(text, btn){
+  if (!window.speechSynthesis) { toast('Voice playback is not supported on this browser.'); return; }
+  if (currentUtterance && speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+    document.querySelectorAll('.msg-action-btn.speaking').forEach(b => { b.classList.remove('speaking'); b.textContent = '🔊 Listen'; });
+    currentUtterance = null;
+    return;
+  }
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.98;
+  utter.onstart = () => { if (btn) { btn.classList.add('speaking'); btn.textContent = '⏸ Stop'; } };
+  utter.onend = () => { if (btn) { btn.classList.remove('speaking'); btn.textContent = '🔊 Listen'; } currentUtterance = null; };
+  utter.onerror = () => { if (btn) { btn.classList.remove('speaking'); btn.textContent = '🔊 Listen'; } currentUtterance = null; };
+  currentUtterance = utter;
+  speechSynthesis.speak(utter);
+}
+
+async function askZimora(body) {
+  const res = await fetch('/api/ask', {
+    method: 'POST',
+
+    headers: {
+      'Content-Type': 'application/json'
+    },
+
+    body: JSON.stringify({
+      eduName,
+      eduLevel,
+      ...body
+    })
+  });
+
+  const text = await res.text();
+
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    console.error(
+      'Zimora server returned invalid data:',
+      text
+    );
+
+    throw new Error(
+      'The AI server returned an invalid response.'
+    );
+  }
+
+  if (!res.ok) {
+    throw new Error(
+      data.reply ||
+      data.error ||
+      `AI server error (${res.status})`
+    );
+  }
+
+  return data;
+}
+
+// Streaming variant — shows Zimora's reply token-by-token as it's generated
+// instead of waiting for the whole answer. This is the real fix for "slow":
 // the first words appear as soon as the model starts responding, rather than
 // after the full ~1500-token reply has finished generating server-side.
 // onToken(fullTextSoFar) is called after every chunk; returns the final text.
